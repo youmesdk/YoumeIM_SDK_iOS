@@ -1,5 +1,7 @@
 # IM SDK for iOS 使用指南
 
+## IM SDK 常见问题->[IM FAQ详解](https://github.com/youmesdk/wiki/blob/master/IMFAQ.md)
+
 ## 导入IM SDK
 
 - 将`im_ios`复制到工程的根目录下。
