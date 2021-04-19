@@ -36,6 +36,10 @@ YIMImplement::YIMImplement ()
     
     IMManager->SetUserProfileCallback(this);
     IMManager->SetFriendCallback(this);
+    
+    if (m_updateReadStatusCallbackFlag) {
+        IMManager->SetUpdateReadStatusCallback(this);
+    }
 }
 
 void YIMImplement::RebindCallback(){
@@ -68,10 +72,10 @@ YIMImplement::~YIMImplement ()
 
 //implement callback
 //IYIMLoginCallback 目前用到的回调
-void YIMImplement::OnLogin(YIMErrorcode errorcode, const XString& userID){
+void YIMImplement::OnLogin(YIMErrorcode errorcode, const XCHAR* userID){
     NSString *uid=nil;
     if(errorcode == YIMErrorcode_Success){
-        uid = [NSString stringWithCString:userID.c_str() encoding:NSUTF8StringEncoding];
+        uid = [NSString stringWithCString:userID encoding:NSUTF8StringEncoding];
     }
     dispatch_async(dispatch_get_main_queue(), ^{
         if([delegate respondsToSelector:@selector(OnLogin:userID:)]){
@@ -95,10 +99,10 @@ void YIMImplement::OnLogout(YIMErrorcode errorcode) {
         }
     });
 }
-void YIMImplement::OnJoinChatRoom(YIMErrorcode errorcode,  const XString& chatRoomID){
+void YIMImplement::OnJoinChatRoom(YIMErrorcode errorcode,  const XCHAR* chatRoomID){
     NSString *groupID =nil;
     if(errorcode == YIMErrorcode_Success){
-        groupID = [NSString stringWithUTF8String:chatRoomID.c_str()];
+        groupID = [NSString stringWithUTF8String:chatRoomID];
     }
     
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -114,10 +118,10 @@ void YIMImplement::OnJoinChatRoom(YIMErrorcode errorcode,  const XString& chatRo
     });
 }
 
-void YIMImplement::OnLeaveChatRoom(YIMErrorcode errorcode, const XString& chatRoomID){
+void YIMImplement::OnLeaveChatRoom(YIMErrorcode errorcode, const XCHAR* chatRoomID){
     NSString *groupID =nil;
     if(errorcode == YIMErrorcode_Success){
-        groupID = [NSString stringWithUTF8String:chatRoomID.c_str()];
+        groupID = [NSString stringWithUTF8String:chatRoomID];
     }
     
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -146,10 +150,10 @@ void YIMImplement::OnLeaveAllChatRooms(YIMErrorcode errorcode){
 }
 
 //其他用户加入频道通知
-void YIMImplement::OnUserJoinChatRoom(const XString& chatRoomID, const XString& userID)
+void YIMImplement::OnUserJoinChatRoom(const XCHAR* chatRoomID, const XCHAR* userID)
 {
-    NSString *roomID = [NSString stringWithUTF8String:chatRoomID.c_str()];
-    NSString *user = [NSString stringWithUTF8String:userID.c_str()];
+    NSString *roomID = [NSString stringWithUTF8String:chatRoomID];
+    NSString *user = [NSString stringWithUTF8String:userID];
     
     dispatch_sync(dispatch_get_main_queue(), ^{
         if ([delegate respondsToSelector:@selector(OnUserJoinRoom:userID:)]) {
@@ -159,10 +163,10 @@ void YIMImplement::OnUserJoinChatRoom(const XString& chatRoomID, const XString& 
 }
 
 //其他用户退出频道通知
-void YIMImplement::OnUserLeaveChatRoom(const XString& chatRoomID, const XString& userID)
+void YIMImplement::OnUserLeaveChatRoom(const XCHAR* chatRoomID, const XCHAR* userID)
 {
-    NSString *roomID = [NSString stringWithUTF8String:chatRoomID.c_str()];
-    NSString *user = [NSString stringWithUTF8String:userID.c_str()];
+    NSString *roomID = [NSString stringWithUTF8String:chatRoomID];
+    NSString *user = [NSString stringWithUTF8String:userID];
     
     dispatch_sync(dispatch_get_main_queue(), ^{
         if ([delegate respondsToSelector:@selector(OnUserLeaveRoom:userID:)]) {
@@ -171,9 +175,9 @@ void YIMImplement::OnUserLeaveChatRoom(const XString& chatRoomID, const XString&
     });
 }
 
-void YIMImplement::OnGetRoomMemberCount(YIMErrorcode errorcode, const XString& chatRoomID, unsigned int count)
+void YIMImplement::OnGetRoomMemberCount(YIMErrorcode errorcode, const XCHAR* chatRoomID, unsigned int count)
 {
-    NSString *roomID = [NSString stringWithUTF8String:chatRoomID.c_str()];
+    NSString *roomID = [NSString stringWithUTF8String:chatRoomID];
     dispatch_sync(dispatch_get_main_queue(), ^{
         if ([delegate respondsToSelector:@selector(OnGetRoomMemberCount:chatRoomID:count:)]) {
             [delegate OnGetRoomMemberCount:(YIMErrorcodeOC)errorcode chatRoomID:roomID count:count];
@@ -189,14 +193,14 @@ void YIMImplement::OnGetRoomMemberCount(YIMErrorcode errorcode, const XString& c
 
 
 //文本翻译完成回调
-void YIMImplement::OnTranslateTextComplete(YIMErrorcode errorcode, unsigned int requestID, const XString& text, LanguageCode srcLangCode, LanguageCode destLangCode){
+void YIMImplement::OnTranslateTextComplete(YIMErrorcode errorcode, unsigned int requestID, const XCHAR* text, LanguageCode srcLangCode, LanguageCode destLangCode){
     dispatch_async(dispatch_get_main_queue(), ^{
         if( [delegate respondsToSelector:@selector( OnTranslateTextComplete:requestID:text:srcLangCode:destLangCode:)]){
-            [delegate OnTranslateTextComplete:(YIMErrorcodeOC)errorcode requestID:requestID text:[NSString stringWithUTF8String:text.c_str()] srcLangCode:(LanguageCodeOC)srcLangCode destLangCode:(LanguageCodeOC)destLangCode];
+            [delegate OnTranslateTextComplete:(YIMErrorcodeOC)errorcode requestID:requestID text:[NSString stringWithUTF8String:text] srcLangCode:(LanguageCodeOC)srcLangCode destLangCode:(LanguageCodeOC)destLangCode];
         }
         translateTextCompleteCBType callblock = [[YIMCallbackBlock GetInstance].translateTextCompleteCBBlocks objectForKey:[NSNumber numberWithUnsignedLongLong:requestID]];
         if(callblock){
-            callblock((YIMErrorcodeOC)errorcode, requestID, [NSString stringWithUTF8String:text.c_str()], (LanguageCodeOC)srcLangCode, (LanguageCodeOC)destLangCode);
+            callblock((YIMErrorcodeOC)errorcode, requestID, [NSString stringWithUTF8String:text], (LanguageCodeOC)srcLangCode, (LanguageCodeOC)destLangCode);
             callblock = nil;
             [[YIMCallbackBlock GetInstance].translateTextCompleteCBBlocks removeObjectForKey:[NSNumber numberWithUnsignedLongLong:requestID]];
         }
@@ -204,9 +208,9 @@ void YIMImplement::OnTranslateTextComplete(YIMErrorcode errorcode, unsigned int 
 }
 
 //举报处理结果通知
-void YIMImplement::OnAccusationResultNotify(AccusationDealResult result, const XString& userID, unsigned int accusationTime)
+void YIMImplement::OnAccusationResultNotify(AccusationDealResult result, const XCHAR* userID, unsigned int accusationTime)
 {
-    NSString *user = [NSString stringWithUTF8String:userID.c_str()];
+    NSString *user = [NSString stringWithUTF8String:userID];
     dispatch_sync(dispatch_get_main_queue(), ^{
         if ([delegate respondsToSelector:@selector(OnAccusationResultNotify:userID:accusationTime:)]) {
             [delegate OnAccusationResultNotify:(AccusationDealResultOC)result userID:user accusationTime:accusationTime];
@@ -242,24 +246,42 @@ void YIMImplement::OnGetForbiddenSpeakInfo( YIMErrorcode errorcode, std::vector<
 
 //IYIMMessageCallback
 //发送消息状态
-void YIMImplement::OnSendMessageStatus(XUINT64 requestID, YIMErrorcode errorcode, unsigned int sendTime, bool isForbidRoom,  int reasonType, XUINT64 forbidEndTime) {
+void YIMImplement::OnSendMessageStatus(XUINT64 requestID, YIMErrorcode errorcode, unsigned int sendTime, bool isForbidRoom,  int reasonType, XUINT64 forbidEndTime, XUINT64 messageID) {
     dispatch_async(dispatch_get_main_queue(), ^{
         if([delegate respondsToSelector:@selector(OnSendMessageStatus:errorcode:sendTime:isForbidRoom:reasonType:forbidEndTime:)]){
             [delegate OnSendMessageStatus:requestID errorcode:(YIMErrorcodeOC)errorcode sendTime:sendTime isForbidRoom:isForbidRoom reasonType:reasonType forbidEndTime:forbidEndTime];
         }
         sendMessageStatusCBType callblock = [[YIMCallbackBlock GetInstance].sendMessageCBBlocks objectForKey:[NSNumber numberWithUnsignedLongLong:requestID]];
         if(callblock){
-        callblock((YIMErrorcodeOC)errorcode,sendTime,isForbidRoom,reasonType,forbidEndTime);
+            callblock((YIMErrorcodeOC)errorcode,sendTime,isForbidRoom,reasonType,forbidEndTime,messageID);
             callblock = nil;
             [[YIMCallbackBlock GetInstance].sendMessageCBBlocks removeObjectForKey:[NSNumber numberWithUnsignedLongLong:requestID]];
         }
     });
 }
 
+void YIMImplement::OnUploadProgress(XUINT64 requestID, float percent) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if([delegate respondsToSelector:@selector(OnUploadProgress:percent:)]){
+            [delegate OnUploadProgress:requestID percent:percent];
+        }
+
+        uploadProgressCBType callblock = [[YIMCallbackBlock GetInstance].uploadProgressCBBlocks objectForKey:[NSNumber numberWithUnsignedLongLong:requestID]];
+        if(callblock){
+            callblock(percent);
+
+            if (percent >= 100.00) {
+                callblock = nil;
+                [[YIMCallbackBlock GetInstance].uploadProgressCBBlocks removeObjectForKey:[NSNumber numberWithUnsignedLongLong:requestID]];
+            }
+        }
+    });
+}
+
 //屏蔽/解除屏蔽用户消息回调
-void YIMImplement::OnBlockUser(YIMErrorcode errorcode, const XString& userID, bool block)
+void YIMImplement::OnBlockUser(YIMErrorcode errorcode, const XCHAR* userID, bool block)
 {
-    NSString *user = [NSString stringWithUTF8String:userID.c_str()];
+    NSString *user = [NSString stringWithUTF8String:userID];
     dispatch_sync(dispatch_get_main_queue(), ^{
         if ([delegate respondsToSelector:@selector(OnBlockUser:userID:block:)]) {
             [delegate OnBlockUser:(YIMErrorcodeOC)errorcode userID:user block:block];
@@ -267,12 +289,12 @@ void YIMImplement::OnBlockUser(YIMErrorcode errorcode, const XString& userID, bo
         NSString *strKey;
         strKey = [NSString stringWithFormat:@"%@_%d",user,block];
         NSLog(@"屏蔽用户回调，strKey:%@",strKey);
-        blockUserCBType callblock = [[YIMCallbackBlock GetInstance].blockUserCBBlocks objectForKey:strKey];
+        blockUserCBType callblock = [[YIMCallbackBlock GetInstance].blockUserCBBlocks objectForKey:user];
         if(callblock)
         {
             callblock((YIMErrorcodeOC)errorcode, user, block);
             callblock = nil;
-            [[YIMCallbackBlock GetInstance].blockUserCBBlocks removeObjectForKey:strKey];
+            [[YIMCallbackBlock GetInstance].blockUserCBBlocks removeObjectForKey:user];
         }
     });
 }
@@ -418,10 +440,10 @@ void YIMImplement::OnRecvMessage( std::shared_ptr<IYIMMessage> pMessage) {
 }
 
 //语音消息的回掉
-void YIMImplement::OnSendAudioMessageStatus(XUINT64 requestID, YIMErrorcode errorcode, const XString& text,  const XString& audioPath, unsigned int audioTime, unsigned int sendTime, bool isForbidRoom,  int reasonType, XUINT64 forbidEndTime)
+void YIMImplement::OnSendAudioMessageStatus(XUINT64 requestID, YIMErrorcode errorcode, const XCHAR* text,  const XCHAR* audioPath, unsigned int audioTime, unsigned int sendTime, bool isForbidRoom,  int reasonType, XUINT64 forbidEndTime,XUINT64 messageID)
 {
-    NSString* messageTxt = [NSString stringWithUTF8String:text.c_str()];
-    NSString* audioPathStr = [NSString stringWithUTF8String:audioPath.c_str()];
+    NSString* messageTxt = [NSString stringWithUTF8String:text];
+    NSString* audioPathStr = [NSString stringWithUTF8String:audioPath];
     dispatch_async(dispatch_get_main_queue(), ^{
         if([delegate respondsToSelector:@selector(OnSendAudioMessageStatus:errorcode:strMessage:strAudioPath:audioTime:sendTime:isForbidRoom:reasonType:forbidEndTime:)]){
             [delegate OnSendAudioMessageStatus:requestID errorcode:(YIMErrorcodeOC)errorcode strMessage:messageTxt strAudioPath:audioPathStr audioTime:audioTime sendTime:sendTime isForbidRoom:isForbidRoom reasonType:reasonType forbidEndTime:forbidEndTime];
@@ -430,16 +452,16 @@ void YIMImplement::OnSendAudioMessageStatus(XUINT64 requestID, YIMErrorcode erro
         sendAudioMsgStatusCBType callblock = [[YIMCallbackBlock GetInstance].sendAudioMsgCBBlocks objectForKey:[NSNumber numberWithUnsignedLongLong:requestID]];
         if(callblock)
         {
-        callblock((YIMErrorcodeOC)errorcode,messageTxt,audioPathStr,audioTime,sendTime,isForbidRoom,reasonType,forbidEndTime);
+            callblock((YIMErrorcodeOC)errorcode,messageTxt,audioPathStr,audioTime,sendTime,isForbidRoom,reasonType,forbidEndTime, messageID);
             callblock = nil;
             [[YIMCallbackBlock GetInstance].sendAudioMsgCBBlocks removeObjectForKey:[NSNumber numberWithUnsignedLongLong:requestID]];
         }
     });
 }
 
-void YIMImplement::OnStartSendAudioMessage(XUINT64 requestID, YIMErrorcode errorcode,  const XString& text, const XString& audioPath, unsigned int audioTime) {
-    NSString* messageTxt = [NSString stringWithUTF8String:text.c_str()];
-    NSString* audioPathStr = [NSString stringWithUTF8String:audioPath.c_str()];
+void YIMImplement::OnStartSendAudioMessage(XUINT64 requestID, YIMErrorcode errorcode,  const XCHAR* text, const XCHAR* audioPath, unsigned int audioTime) {
+    NSString* messageTxt = [NSString stringWithUTF8String:text];
+    NSString* audioPathStr = [NSString stringWithUTF8String:audioPath];
     dispatch_async(dispatch_get_main_queue(), ^{
         if([delegate respondsToSelector:@selector(OnStartSendAudioMessage:errorcode:strMessage:strAudioPath:audioTime:)]){
             [delegate OnStartSendAudioMessage:requestID errorcode:(YIMErrorcodeOC)errorcode strMessage:messageTxt strAudioPath:audioPathStr audioTime:audioTime ];
@@ -453,8 +475,8 @@ void YIMImplement::OnStartSendAudioMessage(XUINT64 requestID, YIMErrorcode error
     });
 }
 
-void YIMImplement::OnQueryHistoryMessage(YIMErrorcode errorcode, const XString& targetID, int remain, std::list<std::shared_ptr<IYIMMessage> > messageList){
-    NSString* target = [NSString stringWithUTF8String:targetID.c_str()];
+void YIMImplement::OnQueryHistoryMessage(YIMErrorcode errorcode, const XCHAR* targetID, int remain, std::list<std::shared_ptr<IYIMMessage> > messageList){
+    NSString* target = [NSString stringWithUTF8String:targetID];
     
     NSMutableArray* arr = [NSMutableArray arrayWithCapacity:10];
     std::list<std::shared_ptr<IYIMMessage> >::iterator it = messageList.begin();
@@ -471,16 +493,14 @@ void YIMImplement::OnQueryHistoryMessage(YIMErrorcode errorcode, const XString& 
         if(callblock)
         {
            callblock((YIMErrorcodeOC)errorcode, target, remain, arr);
-            callblock = nil;
-            [[YIMCallbackBlock GetInstance].queryHistoryMsgCBBlocks removeObjectForKey:target];
         }
     });
 }
 
 //获取房间历史纪录回调
-void YIMImplement::OnQueryRoomHistoryMessageFromServer(YIMErrorcode errorcode, const XString& roomID, int remain, std::list<std::shared_ptr<IYIMMessage> >& messageList)
+void YIMImplement::OnQueryRoomHistoryMessageFromServer(YIMErrorcode errorcode, const XCHAR* roomID, int remain, std::list<std::shared_ptr<IYIMMessage> >& messageList)
 {
-    NSString* nsRoomID = [NSString stringWithUTF8String:roomID.c_str()];
+    NSString* nsRoomID = [NSString stringWithUTF8String:roomID];
     NSMutableArray* messageArray = [NSMutableArray arrayWithCapacity:messageList.size()];
     for (std::list<std::shared_ptr<IYIMMessage> >::iterator it = messageList.begin(); it != messageList.end(); ++it)
     {
@@ -495,8 +515,6 @@ void YIMImplement::OnQueryRoomHistoryMessageFromServer(YIMErrorcode errorcode, c
         if(callblock)
         {
             callblock((YIMErrorcodeOC)errorcode, nsRoomID, remain, messageArray);
-            callblock = nil;
-            [[YIMCallbackBlock GetInstance].queryRoomHistoryMsgCBBlocks removeObjectForKey:nsRoomID];
         }
     });
 }
@@ -526,8 +544,8 @@ void YIMImplement::OnStopAudioSpeechStatus(YIMErrorcode errorcode, std::shared_p
 }
 
 
-void YIMImplement::OnReceiveMessageNotify(YIMChatType chatType, const XString& targetID){
-    NSString* target =  [NSString stringWithUTF8String:targetID.c_str()];
+void YIMImplement::OnReceiveMessageNotify(YIMChatType chatType, const XCHAR* targetID){
+    NSString* target =  [NSString stringWithUTF8String:targetID];
 
     dispatch_async(dispatch_get_main_queue(), ^{
         if([delegate respondsToSelector:@selector(OnReceiveMessageNotify:targetID:)]){
@@ -536,9 +554,18 @@ void YIMImplement::OnReceiveMessageNotify(YIMChatType chatType, const XString& t
     });
 }
 
+void  YIMImplement::OnUpdateReadStatus(const XCHAR* recvId, int chatType, XUINT64 msgSerial) {
+    NSString* recvID = [NSString stringWithUTF8String:recvId];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if ([delegate respondsToSelector:@selector(OnUpdateReadStatus:chatType:msgSerial:)]) {
+            [delegate OnUpdateReadStatus:recvID chatType:(YIMChatTypeOC)chatType msgSerial:msgSerial];
+        }
+    });
+}
+
 //语音文本识别回调
-void YIMImplement::OnGetRecognizeSpeechText(XUINT64 requestID, YIMErrorcode errorcode,const XString& text) {
-    NSString* content = [NSString stringWithUTF8String:text.c_str()];
+void YIMImplement::OnGetRecognizeSpeechText(XUINT64 requestID, YIMErrorcode errorcode,const XCHAR* text) {
+    NSString* content = [NSString stringWithUTF8String:text];
     dispatch_async(dispatch_get_main_queue(), ^{
         if([delegate respondsToSelector:@selector(OnGetRecognizeSpeechText:errorcode:text:)]){
             [delegate OnGetRecognizeSpeechText:requestID errorcode:(YIMErrorcodeOC)errorcode text:content];
@@ -571,9 +598,9 @@ void YIMImplement::OnGetRecentContacts(YIMErrorcode errorcode, std::list<std::sh
 }
 
 //获取用户信息回调(用户信息为JSON格式)
-void YIMImplement::OnGetUserInfo(YIMErrorcode errorcode, const XString& userID, const XString&  userInfo){
-    NSString* info = [NSString stringWithUTF8String:userInfo.c_str()];
-    NSString* user = [NSString stringWithUTF8String:userID.c_str()];
+void YIMImplement::OnGetUserInfo(YIMErrorcode errorcode, const XCHAR* userID, const XCHAR* userInfo){
+    NSString* info = [NSString stringWithUTF8String:userInfo];
+    NSString* user = [NSString stringWithUTF8String:userID];
     dispatch_async(dispatch_get_main_queue(), ^{
         if([delegate respondsToSelector:@selector(OnGetUserInfo:userID:userInfo:)]){
             [delegate OnGetUserInfo:(YIMErrorcodeOC)errorcode userID:user  userInfo:info ];
@@ -588,8 +615,8 @@ void YIMImplement::OnGetUserInfo(YIMErrorcode errorcode, const XString& userID, 
     });
 }
 //查询用户状态回调
-void YIMImplement::OnQueryUserStatus(YIMErrorcode errorcode, const XString&userID, YIMUserStatus status){
-    NSString* user = [NSString stringWithUTF8String:userID.c_str()];
+void YIMImplement::OnQueryUserStatus(YIMErrorcode errorcode, const XCHAR* userID, YIMUserStatus status){
+    NSString* user = [NSString stringWithUTF8String:userID];
     dispatch_async(dispatch_get_main_queue(), ^{
         if([delegate respondsToSelector:@selector(OnQueryUserStatus:userID:status:)]){
             [delegate OnQueryUserStatus:(YIMErrorcodeOC)errorcode  userID:user status:(YIMUserStatusOC)status];
@@ -606,9 +633,9 @@ void YIMImplement::OnQueryUserStatus(YIMErrorcode errorcode, const XString&userI
 
 
 //IYIMDownloadCallback
-void YIMImplement::OnDownload(YIMErrorcode errorcode, std::shared_ptr<IYIMMessage> msg, const XString& savePath){
+void YIMImplement::OnDownload(YIMErrorcode errorcode, std::shared_ptr<IYIMMessage> msg, const XCHAR* savePath){
     YIMMessage* message = ConvertMessageToOC( msg.get() );
-    NSString* path = [NSString stringWithUTF8String:savePath.c_str()];
+    NSString* path = [NSString stringWithUTF8String:savePath];
     dispatch_async(dispatch_get_main_queue(), ^{
         if([delegate respondsToSelector:@selector(OnDownload:pMessage:strSavePath:)]){
             [delegate OnDownload:(YIMErrorcodeOC)errorcode pMessage:message strSavePath:path];
@@ -622,9 +649,9 @@ void YIMImplement::OnDownload(YIMErrorcode errorcode, std::shared_ptr<IYIMMessag
     });
 }
 
-void YIMImplement::OnDownloadByUrl( YIMErrorcode errorcode, const XString& strFromUrl, const XString& savePath, int iAudioTime ) {
-    NSString* url = [NSString stringWithUTF8String:strFromUrl.c_str()];
-    NSString* path = [NSString stringWithUTF8String:savePath.c_str()];
+void YIMImplement::OnDownloadByUrl( YIMErrorcode errorcode, const XCHAR* strFromUrl, const XCHAR* savePath, int iAudioTime ) {
+    NSString* url = [NSString stringWithUTF8String:strFromUrl];
+    NSString* path = [NSString stringWithUTF8String:savePath];
     dispatch_async(dispatch_get_main_queue(), ^{
         if([delegate respondsToSelector:@selector(OnDownloadByUrl:strFromUrl:strSavePath:)]){
             [delegate OnDownloadByUrl: (YIMErrorcodeOC)errorcode strFromUrl:url strSavePath:path];
@@ -638,8 +665,8 @@ void YIMImplement::OnDownloadByUrl( YIMErrorcode errorcode, const XString& strFr
     });
 }
 
-void YIMImplement::OnPlayCompletion(YIMErrorcode errorcode, const XString& path){
-    NSString* playPath = [NSString stringWithUTF8String:path.c_str()];
+void YIMImplement::OnPlayCompletion(YIMErrorcode errorcode, const XCHAR* path){
+    NSString* playPath = [NSString stringWithUTF8String:path];
     dispatch_async(dispatch_get_main_queue(), ^{
         if([delegate respondsToSelector:@selector(OnPlayCompletion:path:)]){
             [delegate OnPlayCompletion:(YIMErrorcodeOC)errorcode  path:playPath ];
@@ -716,9 +743,9 @@ void YIMImplement::OnGetNearbyObjects(YIMErrorcode errorcode,  std::list< std::s
     });
 }
 
-void YIMImplement::OnGetDistance(YIMErrorcode errorcode, const XString& userID, unsigned int distance)
+void YIMImplement::OnGetDistance(YIMErrorcode errorcode, const XCHAR* userID, unsigned int distance)
 {
-    NSString *nsUserID = [NSString stringWithUTF8String:userID.c_str()];
+    NSString *nsUserID = [NSString stringWithUTF8String:userID];
     dispatch_async(dispatch_get_main_queue(), ^{
         if([delegate respondsToSelector:@selector(OnGetDistance:userID:distance:)]){
             [delegate OnGetDistance:(YIMErrorcodeOC)errorcode userID:nsUserID distance:distance];
@@ -754,9 +781,9 @@ void YIMImplement::OnRecvNotice(YIMNotice* notice)
 }
 
 // 撤销公告（置顶公告）
-void YIMImplement::OnCancelNotice(XUINT64 noticeID, const XString& channelID)
+void YIMImplement::OnCancelNotice(XUINT64 noticeID, const XCHAR* channelID)
 {
-    NSString *channel = [NSString stringWithUTF8String:channelID.c_str()];
+    NSString *channel = [NSString stringWithUTF8String:channelID];
     dispatch_async(dispatch_get_main_queue(), ^{
         if ([delegate respondsToSelector:@selector(OnCancelNotice:channelID:)]) {
             [delegate OnCancelNotice:noticeID channelID:channel];
@@ -850,9 +877,9 @@ void YIMImplement::OnSwitchUserOnlineState(YIMErrorcode errorcode)
         }
     });
 }
-void YIMImplement::OnSetPhotoUrl(YIMErrorcode errorcode, const XString &photoUrl)
+void YIMImplement::OnSetPhotoUrl(YIMErrorcode errorcode, const XCHAR* photoUrl)
 {
-    NSString *photoURL = [NSString stringWithUTF8String:photoUrl.c_str()];
+    NSString *photoURL = [NSString stringWithUTF8String:photoUrl];
     dispatch_sync(dispatch_get_main_queue(), ^{
         if ([delegate respondsToSelector:@selector(OnSetPhotoUrl:photoUrl:)]) {
             [delegate OnSetPhotoUrl:(YIMErrorcodeOC)errorcode photoUrl:photoURL];
@@ -864,9 +891,9 @@ void YIMImplement::OnSetPhotoUrl(YIMErrorcode errorcode, const XString &photoUrl
     });
 }
 
-void YIMImplement::OnUserInfoChangeNotify(const XString& userID)
+void YIMImplement::OnUserInfoChangeNotify(const XCHAR* userID)
 {
-    NSString *strUserID = [NSString stringWithUTF8String:userID.c_str()];
+    NSString *strUserID = [NSString stringWithUTF8String:userID];
     
     dispatch_sync(dispatch_get_main_queue(), ^{
         if ([delegate respondsToSelector:@selector(OnUserInfoChangeNotify:)]) {
@@ -899,9 +926,9 @@ void YIMImplement::OnFindUser(YIMErrorcode errorcode, std::list<std::shared_ptr<
     });
 }
 
-void YIMImplement::OnRequestAddFriend(YIMErrorcode errorcode, const XString& userID)
+void YIMImplement::OnRequestAddFriend(YIMErrorcode errorcode, const XCHAR* userID)
 {
-    NSString *strUserID = [NSString stringWithUTF8String:userID.c_str()];
+    NSString *strUserID = [NSString stringWithUTF8String:userID];
     dispatch_sync(dispatch_get_main_queue(), ^{
         if ([delegate respondsToSelector:@selector(OnRequestAddFriend:userID:)]) {
             [delegate OnRequestAddFriend:(YIMErrorcodeOC)errorcode userID:strUserID];
@@ -913,10 +940,10 @@ void YIMImplement::OnRequestAddFriend(YIMErrorcode errorcode, const XString& use
     });
 }
 
-void YIMImplement::OnBeRequestAddFriendNotify(const XString& userID, const XString& comments, XUINT64 reqID)
+void YIMImplement::OnBeRequestAddFriendNotify(const XCHAR* userID, const XCHAR* comments, XUINT64 reqID)
 {
-    NSString *strUserID = [NSString stringWithUTF8String:userID.c_str()];
-    NSString *strComments = [NSString stringWithUTF8String:comments.c_str()];
+    NSString *strUserID = [NSString stringWithUTF8String:userID];
+    NSString *strComments = [NSString stringWithUTF8String:comments];
     
     dispatch_sync(dispatch_get_main_queue(), ^{
         if ([delegate respondsToSelector:@selector(OnBeRequestAddFriendNotify:comments:reqID:)]) {
@@ -925,10 +952,10 @@ void YIMImplement::OnBeRequestAddFriendNotify(const XString& userID, const XStri
     });
 }
 
-void YIMImplement::OnBeAddFriendNotify(const XString& userID, const XString& comments)
+void YIMImplement::OnBeAddFriendNotify(const XCHAR* userID, const XCHAR* comments)
 {
-    NSString *strUserID = [NSString stringWithUTF8String:userID.c_str()];
-    NSString *strComments = [NSString stringWithUTF8String:comments.c_str()];
+    NSString *strUserID = [NSString stringWithUTF8String:userID];
+    NSString *strComments = [NSString stringWithUTF8String:comments];
     
     dispatch_sync(dispatch_get_main_queue(), ^{
         if ([delegate respondsToSelector:@selector(OnBeAddFriendNotify:comments:)]) {
@@ -937,10 +964,10 @@ void YIMImplement::OnBeAddFriendNotify(const XString& userID, const XString& com
     });
 }
 
-void YIMImplement::OnDealBeRequestAddFriend(YIMErrorcode errorcode, const XString& userID, const XString& comments, int dealResult)
+void YIMImplement::OnDealBeRequestAddFriend(YIMErrorcode errorcode, const XCHAR* userID, const XCHAR* comments, int dealResult)
 {
-    NSString *strUserID = [NSString stringWithUTF8String:userID.c_str()];
-    NSString *strComments = [NSString stringWithUTF8String:comments.c_str()];
+    NSString *strUserID = [NSString stringWithUTF8String:userID];
+    NSString *strComments = [NSString stringWithUTF8String:comments];
     
     dispatch_sync(dispatch_get_main_queue(), ^{
         if ([delegate respondsToSelector:@selector(OnDealBeRequestAddFriend:userID:comments:dealResult:)]) {
@@ -955,10 +982,10 @@ void YIMImplement::OnDealBeRequestAddFriend(YIMErrorcode errorcode, const XStrin
     });
 }
 
-void YIMImplement::OnRequestAddFriendResultNotify(const XString& userID, const XString& comments, int dealResult)
+void YIMImplement::OnRequestAddFriendResultNotify(const XCHAR* userID, const XCHAR* comments, int dealResult)
 {
-    NSString *strUserID = [NSString stringWithUTF8String:userID.c_str()];
-    NSString *strComments = [NSString stringWithUTF8String:comments.c_str()];
+    NSString *strUserID = [NSString stringWithUTF8String:userID];
+    NSString *strComments = [NSString stringWithUTF8String:comments];
     
     dispatch_sync(dispatch_get_main_queue(), ^{
         if ([delegate respondsToSelector:@selector(OnRequestAddFriendResultNotify:comments:dealResult:)]) {
@@ -967,9 +994,9 @@ void YIMImplement::OnRequestAddFriendResultNotify(const XString& userID, const X
     });
 }
 
-void YIMImplement::OnDeleteFriend(YIMErrorcode errorcode, const XString& userID)
+void YIMImplement::OnDeleteFriend(YIMErrorcode errorcode, const XCHAR* userID)
 {
-    NSString *strUserID = [NSString stringWithUTF8String:userID.c_str()];
+    NSString *strUserID = [NSString stringWithUTF8String:userID];
     
     dispatch_sync(dispatch_get_main_queue(), ^{
         if ([delegate respondsToSelector:@selector(OnDeleteFriend:userID:)]) {
@@ -982,9 +1009,9 @@ void YIMImplement::OnDeleteFriend(YIMErrorcode errorcode, const XString& userID)
     });
 }
 
-void YIMImplement::OnBeDeleteFriendNotify(const XString& userID)
+void YIMImplement::OnBeDeleteFriendNotify(const XCHAR* userID)
 {
-    NSString *strUserID = [NSString stringWithUTF8String:userID.c_str()];
+    NSString *strUserID = [NSString stringWithUTF8String:userID];
     
     dispatch_sync(dispatch_get_main_queue(), ^{
         if ([delegate respondsToSelector:@selector(OnBeDeleteFriendNotify:)]) {
@@ -993,9 +1020,9 @@ void YIMImplement::OnBeDeleteFriendNotify(const XString& userID)
     });
 }
 
-void YIMImplement::OnBlackFriend(YIMErrorcode errorcode, int type, const XString& userID)
+void YIMImplement::OnBlackFriend(YIMErrorcode errorcode, int type, const XCHAR* userID)
 {
-    NSString *strUserID = [NSString stringWithUTF8String:userID.c_str()];
+    NSString *strUserID = [NSString stringWithUTF8String:userID];
     
     dispatch_sync(dispatch_get_main_queue(), ^{
         if ([delegate respondsToSelector:@selector(OnBlackFriend:type:userID:)]) {

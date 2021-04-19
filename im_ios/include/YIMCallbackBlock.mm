@@ -27,6 +27,7 @@
             _instance.leaveAllRoomCB = nil;
             
             _instance.sendMessageCBBlocks = [[NSMutableDictionary alloc] initWithCapacity:5];
+            _instance.uploadProgressCBBlocks = [[NSMutableDictionary alloc] initWithCapacity:5];
             _instance.sendAudioMsgCBBlocks = [[NSMutableDictionary alloc] initWithCapacity:5];
             _instance.startSendAudioMsgCBBlocks = [[NSMutableDictionary alloc] initWithCapacity:5];
             _instance.uploadSpeechStatusCBBlocks = [[NSMutableDictionary alloc] initWithCapacity:5];

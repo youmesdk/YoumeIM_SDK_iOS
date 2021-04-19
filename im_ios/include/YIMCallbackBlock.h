@@ -21,8 +21,9 @@ typedef void(^getRoomMemberCountCBType)(YIMErrorcodeOC errorcode, NSString* chat
 
 typedef void(^leaveAllRoomCBType)(YIMErrorcodeOC errorcode);
 
-typedef void(^sendMessageStatusCBType)(YIMErrorcodeOC errorcode, unsigned int sendTime, bool isForbidRoom,int reasonType,unsigned long long forbidEndTime);
-typedef void(^sendAudioMsgStatusCBType)(YIMErrorcodeOC errorcode, NSString* text, NSString* audioPath, unsigned int audioTime, unsigned int sendTime, bool isForbidRoom, int reasonType, unsigned long long forbidEndTime);
+typedef void(^sendMessageStatusCBType)(YIMErrorcodeOC errorcode, unsigned int sendTime, bool isForbidRoom,int reasonType,unsigned long long forbidEndTime,unsigned long long messageID);
+typedef void(^uploadProgressCBType)(float percent);
+typedef void(^sendAudioMsgStatusCBType)(YIMErrorcodeOC errorcode, NSString* text, NSString* audioPath, unsigned int audioTime, unsigned int sendTime, bool isForbidRoom, int reasonType, unsigned long long forbidEndTime,unsigned long long messageID);
 typedef void(^startSendAudioMsgCBType)(YIMErrorcodeOC errorcode, NSString* text, NSString* audioPath, unsigned int audioTime);
 typedef void(^uploadSpeechStatusCBType)(YIMErrorcodeOC errorcode,  AudioSpeechInfo* audioSpeechInfo);
 
@@ -71,6 +72,7 @@ typedef void(^queryFriendRequestListCBType)(YIMErrorcodeOC errorcode, int startI
 @property (nonatomic, copy) leaveAllRoomCBType leaveAllRoomCB;
 
 @property (nonatomic,retain) NSMutableDictionary<NSNumber*,sendMessageStatusCBType>* sendMessageCBBlocks;
+@property (nonatomic,retain) NSMutableDictionary<NSNumber*,uploadProgressCBType>* uploadProgressCBBlocks;
 @property (nonatomic,retain) NSMutableDictionary<NSNumber*,sendAudioMsgStatusCBType>* sendAudioMsgCBBlocks;
 @property (nonatomic,retain) NSMutableDictionary<NSNumber*,startSendAudioMsgCBType>* startSendAudioMsgCBBlocks;
 

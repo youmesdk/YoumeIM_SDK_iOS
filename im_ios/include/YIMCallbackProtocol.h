@@ -120,6 +120,8 @@ typedef enum
     YouMeIMCode_PTT_NoDriver = 2027,				// 驱动问题
     YouMeIMCode_PTT_StartPlayFailed = 2028,		    // 启动播放失败
     YouMeIMCode_PTT_StopPlayFailed = 2029,			// 停止播放失败
+    YouMeIMCode_PTT_RecognizeFailed = 2030,         // 识别失败
+    YouMeIMCode_PTT_ShortConnectionMode = 2031,     // 短连接模式，不支持发送
     
     YouMeIMCode_Fail = 10000
 }YIMErrorcodeOC;
@@ -162,6 +164,10 @@ typedef enum
 
 //新消息通知（只有SetReceiveMessageSwitch设置为不自动接收消息，才会收到该回调）
 - (void) OnReceiveMessageNotify:(YIMChatTypeOC)chatType targetID:(NSString*)targetID;
+
+//接收端消息已读，更新发送端消息显示状态
+- (void) OnUpdateReadStatus:(NSString*)recvId chatType:(YIMChatTypeOC)chatType msgSerial:(unsigned long long)msgSerial;
+
 // 音量回调
 - (void) OnRecordVolumeChange:(float) volume;
 
@@ -233,6 +239,7 @@ typedef enum
 //发送消息回调
 - (void) OnSendMessageStatus:(unsigned long long) iRequestID errorcode:(YIMErrorcodeOC) errorcode sendTime:(unsigned int)sendTime isForbidRoom:(bool) isForbidRoom   reasonType:(int)reasonType forbidEndTime:(unsigned long long)forbidEndTime;
 
+- (void) OnUploadProgress:(unsigned long long) iRequestID percent:(float)percent;
 //发送语音消息回调
 - (void) OnSendAudioMessageStatus:(unsigned long long) iRequestID errorcode:(YIMErrorcodeOC) errorcode strMessage:(NSString*)strMessage strAudioPath:(NSString*) strAudioPath audioTime:(unsigned int)audioTime sendTime:(unsigned int)sendTime isForbidRoom:(bool) isForbidRoom   reasonType:(int)reasonType forbidEndTime:(unsigned long long)forbidEndTime;
 //停止语音回调（调用StopAudioMessage停止语音之后，发送语音消息之前）

@@ -29,13 +29,15 @@
 -(void)SetDelegate:(id<YIMCallbackProtocol>) outDelegate;
 //初始化
 -(YIMErrorcodeOC)InitWithAppKey:(NSString *)strAppKey appSecurityKey:(NSString*)strAppSecurity serverZone:(YouMeIMServerZoneOC)serverZone;
-
+-(void) SetShortConnectionMode;
 -(void) Login:(NSString *)userName password:(NSString *)password token:(NSString*) token callback:(loginCBType) callback;
 -(void) JoinChatRoom:(NSString *)roomID callback:(joinRoomCBType)callback;
 -(void) LeaveChatRoom:(NSString *)roomID callback:(leaveRoomCBType) callback;
 -(void) LeaveAllChatRooms:(leaveAllRoomCBType)callback;
 -(void) GetRoomMemberCount:(NSString *)roomID callback:(getRoomMemberCountCBType) callback;
-
+-(void) SetUpdateReadStatusCallbackFlag:(bool)flag;
+// 确认消息已读
+-(void) sendMessageReadStatus:(NSString*)sendId chatType:(YIMChatTypeOC)chatType msgId:(unsigned long long)msgId;
 
 //发送文本消息
 -(unsigned long long) SendTextMessage:(NSString *)receiverID chatType:(YIMChatTypeOC)chatType msgContent:(NSString *) msgContent attachParam:(NSString *)attachParam callback:(sendMessageStatusCBType)callback;
@@ -57,6 +59,15 @@
 //发送文件
 -(unsigned long long) SendFile:(NSString*) receiverID chatType:(YIMChatTypeOC)chatType filePath:(NSString*)filePath extraParam:(NSString*)extraParam fileType:(YIMFileTypeOC)fileType callback:(sendMessageStatusCBType)callback;
 
+//发送文件显示上传进度
+-(unsigned long long) SendFileWithProgress:(NSString*) receiverID chatType:(YIMChatTypeOC)chatType filePath:(NSString*)filePath extraParam:(NSString*)extraParam fileType:(YIMFileTypeOC)fileType callback:(sendMessageStatusCBType)callback uploadProgress:(uploadProgressCBType)progressCallback;
+
+//获取上传文件进度
+-(int) getSendFilePercent:(NSString*) filePath;
+
+//清除上传文件进度缓存
+-(void) clearUploadFileCache:(NSString*) filePath;
+
 //extraParam:附加参数 格式为json {"nickname":"","server_area":"","location":"","score":"","level":"","vip_level":"","extra":""}
 -(unsigned long long) SendGift:(NSString*)anchorID channel:(NSString*)channel giftId:(int)giftId giftCount:(int)giftCount extraParam:(NSString*) extraParam callback:(sendMessageStatusCBType)callback;
 
@@ -70,6 +81,9 @@
 
 //删除指定messageID对应消息
 -(YIMErrorcodeOC) DeleteHistoryMessageByID:(unsigned long long)messageID;
+
+//删除指定用户的历史消息
+-(YIMErrorcodeOC) DeleteHistoryMessageByRecvId:(NSString*)recvId chatType:(YIMChatTypeOC)chatType startMessageID:(unsigned long long)startMessageID count:(int)count;
 
 //删除指定用户的本地消息历史记录，保留指定的消息ID列表记录
 - (YIMErrorcodeOC) DeleteSpecifiedHistoryMessage:(NSString*)targetID chatType:(YIMChatTypeOC)chatType excludeMesList:(NSMutableArray *)excludeMesList;
@@ -178,6 +192,9 @@
 - (YIMErrorcodeOC) SetDownloadDir:(NSString*) path;
 
 - (YIMErrorcodeOC) SetMessageRead:(unsigned long long)msgID read:(bool)read;
+
+// 设置某个用户所有消息已读
+- (YIMErrorcodeOC) SetAllMessageRead:(NSString*)userID read :(bool)read;
 
 //用户信息管理
 // 设置用户信息 userInfo(昵称，性别，个性签名，国家，省份，城市，扩展信息)

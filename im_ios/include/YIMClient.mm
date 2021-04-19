@@ -32,6 +32,10 @@
     YIMImplement::getInstance()->delegate = outDelegate;
 }
 
+-(void) SetUpdateReadStatusCallbackFlag:(bool)flag{
+    YIMImplement::getInstance()->m_updateReadStatusCallbackFlag = flag;
+}
+
 -(void)RebindIMCallback{
     YIMImplement::getInstance()->RebindCallback();
 }
@@ -40,6 +44,10 @@
     YIMManager::CreateInstance()->SetServerZone((ServerZone)(int)serverZone);
     
     return (YIMErrorcodeOC)YIMManager::CreateInstance()->Init([strAppKey UTF8String], [strAppSecurity UTF8String], "");
+}
+
+-(void) SetShortConnectionMode{
+    YIMManager::CreateInstance()->SetShortConnectionMode();
 }
 
 -(void) Login:(NSString *)userName password:(NSString *)password token:(NSString*) token callback:(loginCBType) callback{
@@ -131,6 +139,11 @@
     [[YIMCallbackBlock GetInstance].sendMessageCBBlocks setObject:callback forKey:[NSNumber numberWithUnsignedLongLong:requestid]];
 }
 
+-(void)setUploadProgressCB2Cache:(uploadProgressCBType)callback requestid:(unsigned long long)requestid
+{
+    [[YIMCallbackBlock GetInstance].uploadProgressCBBlocks setObject:callback forKey:[NSNumber numberWithUnsignedLongLong:requestid]];
+}
+
 -(unsigned long long) SendTextMessage:(NSString *)receiverID chatType:(YIMChatTypeOC)chatType msgContent:(NSString *) msgContent attachParam:(NSString *)attachParam callback:(sendMessageStatusCBType)callback{
     
     unsigned long long requestID = 0;
@@ -142,16 +155,25 @@
         return requestID;
     }
     
-    if(code == YIMErrorcode_Success)
+    if(code == (int)YIMErrorcode_Success)
     {
         [self setSendMessageCB2Cache:callback requestid:requestID];
     }
     else
     {
-       callback(code,0,false,0,0);
+       callback(code,0,false,0,0,0);
     }
     
     return requestID;
+}
+
+-(void) sendMessageReadStatus:(NSString*)sendId chatType:(YIMChatTypeOC)chatType msgId:(unsigned long long)msgId {
+    if (sendId == nil) {
+        NSLog(@"bruce >>> sendId is null");
+        return;
+    }
+    
+    YIMManager::CreateInstance()->GetMessageManager()->SendMessageReadStatus([sendId UTF8String], chatType, msgId);
 }
 
 -(unsigned long long) StartRecordAudioMessage:(NSString *)receiverID chatType:(YIMChatTypeOC)chatType recognizeText:(bool)recognizeText isOpenOnlyRecognizeText:(bool)isOpenOnlyRecognizeText callback:(sendAudioMsgStatusCBType)callback startSendCallback:(startSendAudioMsgCBType)startSendCallback{
@@ -174,7 +196,7 @@
         return requestID;
     }
     
-    if(code == YIMErrorcode_Success)
+    if(code == (int)YIMErrorcode_Success)
     {
         if (startSendCallback)
         {
@@ -185,7 +207,7 @@
     }
     else
     {
-        callback(code,@"",@"",0,0,false,-1,0);
+        callback(code,@"",@"",0,0,false,-1,0, 0);
     }
     
     return requestID;
@@ -240,30 +262,52 @@
     }
     else
     {
-        callback(code,0,false,0,0);
+        callback(code,0,false,0,0,0);
     }
     
     return requestID;
 }
 
--(unsigned long long) SendFile:(NSString*) receiverID chatType:(YIMChatTypeOC)chatType filePath:(NSString*)filePath extraParam:(NSString*)extraParam fileType:(YIMFileTypeOC)fileType callback:(sendMessageStatusCBType)callback{
+-(unsigned long long) SendFile:(NSString*) receiverID chatType:(YIMChatTypeOC)chatType filePath:(NSString*)filePath extraParam:(NSString*)extraParam fileType:(YIMFileTypeOC)fileType callback:(sendMessageStatusCBType)callback {
     
     unsigned long long requestID = 0;
     
     YIMErrorcodeOC code = (YIMErrorcodeOC)YIMManager::CreateInstance()->GetMessageManager()->SendFile([receiverID UTF8String], (YIMChatType)chatType, [filePath UTF8String], &requestID, [extraParam UTF8String],(YIMFileType)fileType);
-    
+
     if(callback == nil)
     {
         return requestID;
     }
-    
+
     if(code == YouMeIMCode_Success)
     {
         [self setSendMessageCB2Cache:callback requestid:requestID];
     }
     else
     {
-        callback(code,0,false,0,0);
+        callback(code,0,false,0,0,0);
+    }
+    
+    return requestID;
+}
+
+-(unsigned long long) SendFileWithProgress:(NSString*) receiverID chatType:(YIMChatTypeOC)chatType filePath:(NSString*)filePath extraParam:(NSString*)extraParam fileType:(YIMFileTypeOC)fileType callback:(sendMessageStatusCBType)callback uploadProgress:(uploadProgressCBType)progressCallback {
+    unsigned long long requestID = 0;
+    
+    YIMErrorcodeOC code = (YIMErrorcodeOC)YIMManager::CreateInstance()->GetMessageManager()->SendFile([receiverID UTF8String], (YIMChatType)chatType, [filePath UTF8String], &requestID, [extraParam UTF8String],(YIMFileType)fileType);
+    if(callback == nil)
+    {
+        return requestID;
+    }
+
+    if(code == YouMeIMCode_Success)
+    {
+        [self setSendMessageCB2Cache:callback requestid:requestID];
+        [self setUploadProgressCB2Cache:progressCallback requestid:requestID];
+    }
+    else
+    {
+        callback(code,0,false,0,0,0);
     }
     
     return requestID;
@@ -287,7 +331,7 @@
     }
     else
     {
-        callback(code,0,false,0,0);
+        callback(code,0,false,0,0,0);
     }
     
     return requestID;
@@ -314,6 +358,10 @@
 
 -(YIMErrorcodeOC) DeleteHistoryMessage:(YIMChatTypeOC)chatType time:(unsigned long long)time{
     return (YIMErrorcodeOC)YIMManager::CreateInstance()->GetMessageManager()->DeleteHistoryMessage( (YIMChatType)chatType, time);
+}
+
+-(YIMErrorcodeOC) DeleteHistoryMessageByRecvId:(NSString*)recvId chatType:(YIMChatTypeOC)chatType startMessageID:(unsigned long long)startMessageID count:(int)count {
+    return (YIMErrorcodeOC)YIMManager::CreateInstance()->GetMessageManager()->DeleteHistoryMessage([recvId UTF8String], (YIMChatType)chatType, startMessageID, count);
 }
 
 -(YIMErrorcodeOC) DeleteHistoryMessageByID:(unsigned long long)messageID{
@@ -733,6 +781,11 @@
 - (YIMErrorcodeOC) SetMessageRead:(unsigned long long)msgID read:(bool)read
 {
     return (YIMErrorcodeOC) YIMManager::CreateInstance()->GetMessageManager()->SetMessageRead(msgID, read);
+}
+
+- (YIMErrorcodeOC) SetAllMessageRead:(NSString*)userID read:(bool)read
+{
+    return (YIMErrorcodeOC) YIMManager::CreateInstance()->GetMessageManager()->SetAllMessageRead([userID UTF8String], read);
 }
 
 - (YIMErrorcodeOC) SetDownloadDir:(NSString*) path
